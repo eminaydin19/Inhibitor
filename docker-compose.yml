@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  redis-cache:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    restart: always
+
+  gateway:
+    build:
+      context: ./gateway
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_URL=redis://redis-cache:6379
+    depends_on:
+      - redis-cache
+    restart: always
+
+  ai-worker:
+    build:
+      context: ./worker
+    environment:
+      - REDIS_URL=redis://redis-cache:6379
+      - LLM_API_KEY=${LLM_API_KEY:-your_api_key_here}
+      - LLM_API_BASE=${LLM_API_BASE:-https://api.groq.com/openai/v1}
+      - LLM_MODEL=${LLM_MODEL:-llama-3.2-3b-preview}
+    depends_on:
+      - redis-cache
+    restart: always
